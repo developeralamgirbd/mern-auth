@@ -31,7 +31,7 @@ const registerService = async (
         if (!isRole){
             isRole = await rolePermissionService.createNewRoleService({roleName: role});
         }
-        return await userService.createNewUser({email, mobile, firstName, lastName, password, confirmPassword, roles: isRole?._id});
+        return await userService.createNewUser({email, mobile, firstName, lastName, password, confirmPassword, roleId: isRole?._id});
     } else {
         throw error('Server error occurred', 5000)
     }
@@ -52,15 +52,20 @@ const loginService = async (
     if (user?.status !== 'active') throw error('Your account is not active. please contact Administrator', 400);
 
     const payload = {
-        email: user.email,
         _id: user._id,
+        email: user.email,      
         firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
+        lastName: user.lastName,    
         mobile: user.mobile,
         status: user.status,
-        verified: user.verified
+        verified: user.verified,
+        role: {
+            _id: user.role._id,
+            name: user.role.name
+        },
+        permissions: user.permissions
     }
+
     return authHelper.createToken(payload);
 
 }
@@ -95,14 +100,10 @@ const verifyOtpService = async (email, otp, options) => {
 
     isOtp.status = 1;
     if (!isOtp) throw error('Invalid OTP', 400);
-
     isOtp.status = 1;
+    await isOtp.save(options);   
+    return userService.userUpdateService({email}, {verified: true}, options );
 
-    await isOtp.save(options);
-
-    const user = await userService.findUserByProperty('email', email, {verified: 1, _id: 1});
-    user.verified = true;
-    return user.save(options);
 
 }
 const passwordChangeService = async ({email, oldPassword, password, confirmPassword})=>{

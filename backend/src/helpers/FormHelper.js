@@ -2,7 +2,7 @@ const validator = require('validator');
 
 class FormHelper {
     isEmpty = (value) => {
-        return value.trim() === ''
+        return value === ''
     }
     isEmail = (email) => {
         return validator.isEmail(email);
